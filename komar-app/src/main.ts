@@ -3,6 +3,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import * as functions from 'firebase-functions';
+/*
 import * as admin from 'firebase-admin';
 
 const authMiddleWare = async (req, res, next) => {
@@ -53,6 +54,7 @@ const authMiddleWare = async (req, res, next) => {
     return;
   }
 };
+*/
 
 const regionalFunctions = functions.region('europe-west3');
 const server = express();
@@ -71,6 +73,7 @@ createNestServer(server)
 
 export const api = regionalFunctions.https.onRequest(server);
 
+/*
 // Temps Table Services
 const temps = express();
 temps.use(authMiddleWare);
@@ -121,3 +124,4 @@ temps.post('/', async (request, response) => {
 });
 
 export const temp = regionalFunctions.https.onRequest(temps);
+*/
