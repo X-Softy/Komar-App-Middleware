@@ -68,7 +68,7 @@ export const createNestServer = async (expressInstance) => {
 };
 
 createNestServer(server)
-  .then((v) => console.log('Nest Ready'))
+  .then(() => console.log('Nest Ready'))
   .catch((err) => console.error('Nest broken', err));
 
 export const api = regionalFunctions.https.onRequest(server);
