@@ -1,5 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { Room } from './room.model';
 import { RoomsService } from './rooms.service';
 
 @Controller('rooms')
@@ -8,7 +9,7 @@ export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Get()
-  getAllRooms() {
-    return {};
+  getRooms(): Room[] {
+    return this.roomsService.getRooms();
   }
 }
