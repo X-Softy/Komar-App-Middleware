@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Patch,
   Post,
   UseGuards,
@@ -18,19 +19,18 @@ export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Get('/category/:id')
-  getRoomsByCategoryId(): Room[] {
-    return this.roomsService.getRooms();
-  }
-
-  @Get('/details/:id')
-  getRoomDetailsById(): Room {
-    return this.roomsService.getRoom();
+  getRoomsByCategoryId(@Param('id') categoryId: string): Room[] {
+    return this.roomsService.getRoomsByCategoryId(categoryId);
   }
 
   @Get('/user')
-  getRoomsOfLoggedInUser(@User() user) {
-    console.log(user);
-    return this.roomsService.getRooms();
+  getRoomsOfLoggedInUser(@User() user): Room[] {
+    return this.roomsService.getRoomsByUserId(user.email);
+  }
+
+  @Get('/details/:id')
+  getRoomDetailsById(@Param('id') roomId: string): Room {
+    return this.roomsService.getRoomDetailsById(roomId);
   }
 
   @Post()

@@ -24,11 +24,18 @@ export class RoomsService {
     },
   ];
 
-  getRooms(): Room[] {
+  getRoomsByCategoryId(categoryId: string): Room[] {
+    console.log(categoryId);
     return this.rooms;
   }
 
-  getRoom(): Room {
+  getRoomDetailsById(roomId: string): Room {
+    console.log(roomId);
     return this.rooms[0];
+  }
+
+  getRoomsByUserId(userId: string): Room[] {
+    console.log(userId);
+    return this.rooms;
   }
 }
