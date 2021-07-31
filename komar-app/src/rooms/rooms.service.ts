@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { CategoriesService } from 'src/categories/categories.service';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { Room } from './room.model';
 
 @Injectable()
 export class RoomsService {
+  constructor(private categoriesService: CategoriesService) {}
+
   private rooms: Room[] = [
     {
       id: '0',
@@ -27,6 +30,7 @@ export class RoomsService {
   ];
 
   getRoomsByCategoryId(categoryId: string): Room[] {
+    console.log(this.categoriesService.getAllCategories());
     console.log(categoryId);
     return this.rooms;
   }
