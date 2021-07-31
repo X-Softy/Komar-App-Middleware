@@ -27,4 +27,8 @@ export class RoomsService {
   getRooms(): Room[] {
     return this.rooms;
   }
+
+  getRoom(): Room {
+    return this.rooms[0];
+  }
 }
