@@ -6,12 +6,10 @@ export class CategoriesService {
   private categories: Category[] = [
     {
       id: '0',
-      identifier: 0,
       title: 'Category 0',
     },
     {
-      id: 'id',
-      identifier: 1,
+      id: '1',
       title: 'Category 1',
     },
   ];

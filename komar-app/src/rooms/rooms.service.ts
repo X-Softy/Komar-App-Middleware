@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { AddCommentDto } from './dto/add-comment.dto';
+import { CreateRoomDto } from './dto/create-room.dto';
 import { Room } from './room.model';
 
 @Injectable()
@@ -37,5 +39,29 @@ export class RoomsService {
   getRoomsByUserId(userId: string): Room[] {
     console.log(userId);
     return this.rooms;
+  }
+
+  createRoom(createRoomDto: CreateRoomDto, creatorUserId: string): void {
+    console.log(createRoomDto, creatorUserId);
+  }
+
+  deleteRoomById(roomId: string, userId: string): void {
+    console.log(roomId, userId);
+  }
+
+  joinUserToRoom(roomId: string, userId: string): void {
+    console.log(roomId, userId);
+  }
+
+  unjoinUserFromRoom(roomId: string, userId: string): void {
+    console.log(roomId, userId);
+  }
+
+  addCommentToRoom(
+    roomId: string,
+    addCommentDto: AddCommentDto,
+    userId: string,
+  ) {
+    console.log(roomId, addCommentDto, userId);
   }
 }

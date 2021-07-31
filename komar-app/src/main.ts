@@ -3,6 +3,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import * as functions from 'firebase-functions';
+import { ValidationPipe } from '@nestjs/common';
 
 const regionalFunctions = functions.region('europe-west3');
 const server = express();
@@ -12,6 +13,7 @@ export const createNestServer = async (expressInstance) => {
     AppModule,
     new ExpressAdapter(expressInstance),
   );
+  app.useGlobalPipes(new ValidationPipe());
   return app.init();
 };
 
