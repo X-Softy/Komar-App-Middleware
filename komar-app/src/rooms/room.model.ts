@@ -23,11 +23,11 @@ export const converter = {
   toFirestoreDetailed(createRoomDto: CreateRoomDto, creatorUserId: string) {
     const { categoryId, title, description } = createRoomDto;
     return {
-      creatorUserId: creatorUserId,
+      creatorUserId,
       joinedUserIds: [],
-      categoryId: categoryId,
-      title: title,
-      description: description,
+      categoryId,
+      title,
+      description,
       comments: [],
     };
   },
@@ -67,7 +67,7 @@ export const converter = {
 
   fromFirestoreComment(addCommentDto: AddCommentDto, userId: string): Comment {
     return {
-      userId: userId,
+      userId,
       comment: addCommentDto.comment,
     };
   },
