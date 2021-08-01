@@ -68,9 +68,12 @@ export class RoomsService {
       throw new NotAcceptableException('invalid category ID was passed');
     }
 
-    const roomDoc = await this.firestore.collection(this.COLLECTION_NAME).doc();
+    const document = await this.firestore
+      .collection(this.COLLECTION_NAME)
+      .doc();
+
     const room = converter.toFirestoreDetailed(createRoomDto, creatorUserId);
-    await roomDoc.set(room);
+    await document.set(room);
   }
 
   async deleteRoomById(roomId: string, userId: string): Promise<void> {
