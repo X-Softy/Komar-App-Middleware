@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { CategoriesService } from 'src/categories/categories.service';
+import { FirebaseFactory } from 'src/utils/firebase.factory';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { Room } from './room.model';
 
 @Injectable()
 export class RoomsService {
+  private firestore = FirebaseFactory.shared.app.firestore();
+
   constructor(private categoriesService: CategoriesService) {}
 
   private rooms: Room[] = [

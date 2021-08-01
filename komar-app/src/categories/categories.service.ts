@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { FirebaseFactory } from 'src/utils/firebase.factory';
 import { Category } from './category.model';
 
 @Injectable()
 export class CategoriesService {
+  private firestore = FirebaseFactory.shared.app.firestore();
+
   private categories: Category[] = [
     {
       id: '0',
