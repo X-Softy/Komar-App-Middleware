@@ -9,7 +9,7 @@ export class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 
   @Get()
-  getAllCategories(): Category[] {
+  getAllCategories(): Promise<Category[]> {
     return this.categoriesService.getAllCategories();
   }
 }

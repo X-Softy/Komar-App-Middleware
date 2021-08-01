@@ -6,18 +6,16 @@ import { Category } from './category.model';
 export class CategoriesService {
   private firestore = FirebaseFactory.shared.app.firestore();
 
-  private categories: Category[] = [
-    {
-      id: '0',
-      title: 'Category 0',
-    },
-    {
-      id: '1',
-      title: 'Category 1',
-    },
-  ];
-
-  getAllCategories(): Category[] {
-    return this.categories;
+  async getAllCategories(): Promise<Category[]> {
+    const categoriesDocs = await this.firestore.collection('categories').get();
+    const categories: Category[] = [];
+    categoriesDocs.forEach((categoryDoc) => {
+      const category: Category = {
+        id: categoryDoc.id,
+        title: categoryDoc.data().title,
+      };
+      categories.push(category);
+    });
+    return categories;
   }
 }

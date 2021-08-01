@@ -13,7 +13,7 @@ import { User as Userable } from 'src/utils/user';
 import { User } from 'src/utils/user.decorator';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { Room } from './room.model';
+import { RoomBrief, RoomDetailed } from './room.model';
 import { RoomsService } from './rooms.service';
 
 @Controller('rooms')
@@ -22,17 +22,17 @@ export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Get('/category/:id')
-  getRoomsByCategoryId(@Param('id') categoryId: string): Room[] {
+  getRoomsByCategoryId(@Param('id') categoryId: string): Promise<RoomBrief[]> {
     return this.roomsService.getRoomsByCategoryId(categoryId);
   }
 
   @Get('/user')
-  getRoomsOfLoggedInUser(@User() user: Userable): Room[] {
+  getRoomsOfLoggedInUser(@User() user: Userable): Promise<RoomBrief[]> {
     return this.roomsService.getRoomsByUserId(user.email);
   }
 
   @Get('/details/:id')
-  getRoomDetailsById(@Param('id') roomId: string): Room {
+  getRoomDetailsById(@Param('id') roomId: string): Promise<RoomDetailed> {
     return this.roomsService.getRoomDetailsById(roomId);
   }
 
@@ -40,17 +40,23 @@ export class RoomsController {
   createRoom(
     @Body() createRoomDto: CreateRoomDto,
     @User() user: Userable,
-  ): void {
+  ): Promise<void> {
     return this.roomsService.createRoom(createRoomDto, user.email);
   }
 
   @Delete('/:id')
-  deleteRoomById(@Param('id') roomId: string, @User() user: Userable): void {
+  deleteRoomById(
+    @Param('id') roomId: string,
+    @User() user: Userable,
+  ): Promise<void> {
     return this.roomsService.deleteRoomById(roomId, user.email);
   }
 
   @Patch('/join/:id')
-  joinUserToRoom(@Param('id') roomId: string, @User() user: Userable): void {
+  joinUserToRoom(
+    @Param('id') roomId: string,
+    @User() user: Userable,
+  ): Promise<void> {
     return this.roomsService.joinUserToRoom(roomId, user.email);
   }
 
@@ -64,7 +70,7 @@ export class RoomsController {
     @Param('id') roomId: string,
     @Body() addCommentDto: AddCommentDto,
     @User() user: Userable,
-  ): void {
+  ): Promise<void> {
     return this.roomsService.addCommentToRoom(
       roomId,
       addCommentDto,

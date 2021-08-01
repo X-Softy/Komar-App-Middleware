@@ -1,9 +1,12 @@
-export interface Room {
+export interface RoomBrief {
   id: string;
-  categoryId: string;
-  creator: string;
-  joinedUserIds: string[];
   title: string;
+}
+
+export interface RoomDetailed extends RoomBrief {
+  categoryId: string;
+  creatorUserId: string;
+  joinedUserIds: string[];
   description: string;
   comments: Comment[];
 }
