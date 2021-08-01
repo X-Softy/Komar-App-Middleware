@@ -7,181 +7,116 @@ import { CategoriesService } from 'src/categories/categories.service';
 import { FirebaseFactory } from 'src/utils/firebase.factory';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { RoomBrief, RoomDetailed } from './room.model';
+import { RoomBrief, RoomDetailed, Comment, converter } from './room.model';
 
 @Injectable()
 export class RoomsService {
   private firestore = FirebaseFactory.shared.app.firestore();
+  private readonly COLLECTION_NAME = 'rooms';
 
   constructor(private categoriesService: CategoriesService) {}
 
   async getRoomsByCategoryId(categoryId: string): Promise<RoomBrief[]> {
-    const categories = await this.categoriesService.getAllCategories();
-    const categoryExists = categories.some(
-      (category) => category.id === categoryId,
-    );
+    const categoryExists = await this.categoryExists(categoryId);
     if (!categoryExists) {
       throw new NotAcceptableException('invalid category ID was passed');
     }
 
     const roomDocs = await this.firestore
-      .collection('rooms')
+      .collection(this.COLLECTION_NAME)
       .where('categoryId', '==', categoryId)
       .get();
 
-    const rooms: RoomBrief[] = [];
-    roomDocs.forEach((roomDoc) => {
-      const room: RoomBrief = {
-        id: roomDoc.id,
-        title: roomDoc.data().title,
-      };
-      rooms.push(room);
-    });
-    return rooms;
+    return converter.fromFirestoreBriefList(roomDocs);
   }
 
   async getRoomDetailsById(roomId: string): Promise<RoomDetailed> {
-    const roomDoc = await this.firestore.collection('rooms').doc(roomId).get();
+    const roomDoc = await this.firestore
+      .collection(this.COLLECTION_NAME)
+      .doc(roomId)
+      .get();
 
     if (!roomDoc.exists) {
       throw new NotFoundException();
     }
 
-    const roomDocData = roomDoc.data();
-
-    const room: RoomDetailed = {
-      id: roomDoc.id,
-      title: roomDocData.title,
-      categoryId: roomDocData.categoryId,
-      creatorUserId: roomDocData.creatorUserId,
-      joinedUserIds: roomDocData.joinedUserIds,
-      description: roomDocData.description,
-      comments: roomDocData.comments,
-    };
-
-    return room;
+    return converter.fromFirestoreDetailed(roomId, roomDoc.data());
   }
 
   async getRoomsByUserId(userId: string): Promise<RoomBrief[]> {
     const createdRoomDocs = await this.firestore
-      .collection('rooms')
+      .collection(this.COLLECTION_NAME)
       .where('creatorUserId', '==', userId)
       .get();
 
     const joinedRoomDocs = await this.firestore
-      .collection('rooms')
+      .collection(this.COLLECTION_NAME)
       .where('joinedUserIds', 'array-contains', userId)
       .get();
 
-    const rooms: RoomBrief[] = [];
-
-    createdRoomDocs.forEach((roomDoc) => {
-      const room: RoomBrief = {
-        id: roomDoc.id,
-        title: roomDoc.data().title,
-      };
-      console.log(roomDoc.data());
-      rooms.push(room);
-    });
-
-    joinedRoomDocs.forEach((roomDoc) => {
-      const room: RoomBrief = {
-        id: roomDoc.id,
-        title: roomDoc.data().title,
-      };
-      console.log(roomDoc.data());
-      rooms.push(room);
-    });
-
-    return rooms;
+    return converter
+      .fromFirestoreBriefList(createdRoomDocs)
+      .concat(converter.fromFirestoreBriefList(joinedRoomDocs));
   }
 
   async createRoom(
     createRoomDto: CreateRoomDto,
     creatorUserId: string,
   ): Promise<void> {
-    const { categoryId, title, description } = createRoomDto;
-
-    const categories = await this.categoriesService.getAllCategories();
-    const categoryExists = categories.some(
-      (category) => category.id === categoryId,
-    );
+    const categoryExists = await this.categoryExists(createRoomDto.categoryId);
     if (!categoryExists) {
       throw new NotAcceptableException('invalid category ID was passed');
     }
 
-    const roomDoc = await this.firestore.collection('rooms').doc();
-
-    await roomDoc.set({
-      creatorUserId: creatorUserId,
-      joinedUserIds: [],
-      categoryId: categoryId,
-      title: title,
-      description: description,
-      comments: [],
-    });
+    const roomDoc = await this.firestore.collection(this.COLLECTION_NAME).doc();
+    const room = converter.toFirestoreDetailed(createRoomDto, creatorUserId);
+    await roomDoc.set(room);
   }
 
   async deleteRoomById(roomId: string, userId: string): Promise<void> {
-    const roomDoc = this.firestore.collection('rooms').doc(roomId);
-    const roomDocSnapshot = await roomDoc.get();
-    const roomDocData = roomDocSnapshot.data();
+    const { document, userIsCreator } = await this.convertParams(
+      roomId,
+      userId,
+    );
 
-    const userIsCreator = roomDocData.creatorUserId === userId;
-    if (!userIsCreator) {
+    if (!userIsCreator()) {
       throw new NotAcceptableException(
         'user is not creator and can not delete room',
       );
     }
 
-    roomDoc.delete();
+    document.delete();
   }
 
   async joinUserToRoom(roomId: string, userId: string): Promise<void> {
-    const roomDoc = this.firestore.collection('rooms').doc(roomId);
-    const roomDocSnapshot = await roomDoc.get();
-    const roomDocData = roomDocSnapshot.data();
+    const { document, data, userIsCreator, userIsJoined } =
+      await this.convertParams(roomId, userId);
 
-    const userIsCreator = roomDocData.creatorUserId === userId;
-    if (userIsCreator) {
-      throw new NotAcceptableException('user is creator and can not be joined');
+    if (userIsCreator() || userIsJoined()) {
+      throw new NotAcceptableException('user is creator or is already joined');
     }
 
-    const userIsJoined = roomDocData.joinedUserIds.includes(userId);
-    if (userIsJoined) {
-      throw new NotAcceptableException('user is already joined');
-    }
-
-    const joinedUserIds = roomDocData.joinedUserIds;
+    const joinedUserIds = data.joinedUserIds;
     joinedUserIds.push(userId);
 
-    roomDoc.update({
+    document.update({
       joinedUserIds: joinedUserIds,
     });
   }
 
   async unjoinUserFromRoom(roomId: string, userId: string): Promise<void> {
-    const roomDoc = this.firestore.collection('rooms').doc(roomId);
-    const roomDocSnapshot = await roomDoc.get();
-    const roomDocData = roomDocSnapshot.data();
+    const { document, data, userIsCreator, userIsJoined } =
+      await this.convertParams(roomId, userId);
 
-    const userIsCreator = roomDocData.creatorUserId === userId;
-    if (userIsCreator) {
-      throw new NotAcceptableException(
-        'user is creator and can not be unjoined',
-      );
+    if (userIsCreator() || !userIsJoined()) {
+      throw new NotAcceptableException('user is creator or is not joined');
     }
 
-    const userIsJoined = roomDocData.joinedUserIds.includes(userId);
-    if (!userIsJoined) {
-      throw new NotAcceptableException('user is not joined anyway');
-    }
-
-    const joinedUserIds = roomDocData.joinedUserIds.filter(
+    const joinedUserIds = data.joinedUserIds.filter(
       (joinedUserId) => joinedUserId !== userId,
     );
 
-    roomDoc.update({
+    document.update({
       joinedUserIds: joinedUserIds,
     });
   }
@@ -191,28 +126,58 @@ export class RoomsService {
     addCommentDto: AddCommentDto,
     userId: string,
   ): Promise<void> {
-    const roomDoc = this.firestore.collection('rooms').doc(roomId);
-    const roomDocSnapshot = await roomDoc.get();
-    const roomDocData = roomDocSnapshot.data();
+    const { document, data, userIsCreator, userIsJoined } =
+      await this.convertParams(roomId, userId);
 
-    const userIsCreator = roomDocData.creatorUserId === userId;
-    if (!userIsCreator) {
-      const userIsJoined = roomDocData.joinedUserIds.includes(userId);
-      if (!userIsJoined) {
-        throw new NotAcceptableException(
-          'user must be creator or joined user to comment',
-        );
-      }
+    if (!userIsCreator() && !userIsJoined()) {
+      throw new NotAcceptableException(
+        'user must be creator or joined user to comment',
+      );
     }
 
-    const comments = roomDocData.comments;
-    comments.push({
-      userId: userId,
-      comment: addCommentDto.comment,
-    });
+    const comments = data.comments;
+    const comment: Comment = converter.fromFirestoreComment(
+      addCommentDto,
+      userId,
+    );
+    comments.push(comment);
 
-    roomDoc.update({
+    document.update({
       comments: comments,
     });
   }
+
+  private async categoryExists(categoryId: string): Promise<boolean> {
+    const categories = await this.categoriesService.getAllCategories();
+    return categories.some((category) => category.id === categoryId);
+  }
+
+  private async convertParams(
+    roomId: string,
+    userId: string,
+  ): Promise<ConvertedParams> {
+    const document = this.firestore
+      .collection(this.COLLECTION_NAME)
+      .doc(roomId);
+
+    const snapshot = await document.get();
+    const data = snapshot.data();
+
+    const userIsCreator = (): boolean => data.creatorUserId === userId;
+    const userIsJoined = (): boolean => data.joinedUserIds.includes(userId);
+
+    return {
+      document,
+      data,
+      userIsCreator,
+      userIsJoined,
+    };
+  }
+}
+
+interface ConvertedParams {
+  document: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData>;
+  data: FirebaseFirestore.DocumentData;
+  userIsCreator: () => boolean;
+  userIsJoined: () => boolean;
 }
