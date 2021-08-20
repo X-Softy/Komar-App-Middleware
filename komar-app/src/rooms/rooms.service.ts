@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotAcceptableException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotAcceptableException } from '@nestjs/common';
 import { CategoriesService } from 'src/categories/categories.service';
 import { FirebaseFactory } from 'src/utils/firebase.factory';
 import { AddCommentDto } from './dto/add-comment.dto';
@@ -19,7 +15,7 @@ export class RoomsService {
   async getRoomsByCategoryId(categoryId: string): Promise<RoomBrief[]> {
     const categoryExists = await this.categoryExists(categoryId);
     if (!categoryExists) {
-      throw new NotAcceptableException('invalid category ID was passed');
+      throw new NotAcceptableException('Invalid category ID was passed');
     }
 
     const roomDocs = await this.firestore
@@ -37,7 +33,7 @@ export class RoomsService {
       .get();
 
     if (!roomDoc.exists) {
-      throw new NotFoundException();
+      throw new NotAcceptableException('Room with given ID does not exists');
     }
 
     return converter.fromFirestoreDetailed(roomId, roomDoc.data());
@@ -65,7 +61,7 @@ export class RoomsService {
   ): Promise<void> {
     const categoryExists = await this.categoryExists(createRoomDto.categoryId);
     if (!categoryExists) {
-      throw new NotAcceptableException('invalid category ID was passed');
+      throw new NotAcceptableException('Invalid category ID was passed');
     }
 
     const document = await this.firestore
@@ -84,7 +80,7 @@ export class RoomsService {
 
     if (!userIsCreator()) {
       throw new NotAcceptableException(
-        'user is not creator and can not delete room',
+        'User is not creator and can not delete the room',
       );
     }
 
@@ -96,7 +92,9 @@ export class RoomsService {
       await this.convertParams(roomId, userId);
 
     if (userIsCreator() || userIsJoined()) {
-      throw new NotAcceptableException('user is creator or is already joined');
+      throw new NotAcceptableException(
+        'User is creator or is already joined to the room',
+      );
     }
 
     const joinedUserIds = data.joinedUserIds;
@@ -112,7 +110,9 @@ export class RoomsService {
       await this.convertParams(roomId, userId);
 
     if (userIsCreator() || !userIsJoined()) {
-      throw new NotAcceptableException('user is creator or is not joined');
+      throw new NotAcceptableException(
+        'User is creator or is not joined to the room',
+      );
     }
 
     const joinedUserIds = data.joinedUserIds.filter(
@@ -134,7 +134,7 @@ export class RoomsService {
 
     if (!userIsCreator() && !userIsJoined()) {
       throw new NotAcceptableException(
-        'user must be creator or joined user to comment',
+        'User must be creator or joined user to comment',
       );
     }
 
@@ -164,6 +164,10 @@ export class RoomsService {
       .doc(roomId);
 
     const snapshot = await document.get();
+    if (!snapshot.exists) {
+      throw new NotAcceptableException('Room with given ID does not exists');
+    }
+
     const data = snapshot.data();
 
     const userIsCreator = (): boolean => data.creatorUserId === userId;
