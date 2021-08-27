@@ -1,6 +1,7 @@
 export interface Category {
   id: string;
   title: string;
+  imageId: string;
 }
 
 export const converter = {
@@ -22,6 +23,7 @@ export const converter = {
     return {
       id: categoryId,
       title: categoryDocData.title,
+      imageId: categoryDocData.imageId,
     };
   },
 };
