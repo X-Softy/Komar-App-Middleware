@@ -4,13 +4,13 @@ import { CreateRoomDto } from './dto/create-room.dto';
 export interface RoomBrief {
   id: string;
   title: string;
+  description: string;
 }
 
 export interface RoomDetailed extends RoomBrief {
   categoryId: string;
   creatorUserId: string;
   joinedUserIds: string[];
-  description: string;
   comments: Comment[];
 }
 
@@ -50,6 +50,7 @@ export const converter = {
     return {
       id: roomId,
       title: roomDocData.title,
+      description: roomDocData.description,
     };
   },
 
